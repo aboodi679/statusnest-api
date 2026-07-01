@@ -14,6 +14,7 @@ class Settings(BaseSettings):
     db_name: Optional[str] = None
     db_user: Optional[str] = None
     db_password: Optional[str] = None
+    redis_url: str = "redis://localhost:6379"
 
     jwt_secret: str
     jwt_algorithm: str = "HS256"
@@ -30,8 +31,7 @@ class Settings(BaseSettings):
                 f"@{self.db_host}:{self.db_port}/{self.db_name}"
             )
             return self
-        raise ValueError("Either DATABASE_URL or DB_HOST/DB_NAME/DB_USER/DB_PASSWORD must be set")
-
+      redis_url: str = "REDIS_URL=redis://statusnest-dev-redis.b8x2ra.0001.use1.cache.amazonaws.com:6379"  # ← add here
     class Config:
         env_file = ".env"
 

@@ -41,3 +41,13 @@ class Subscriber(Base):
     user_id = Column(UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
     email = Column(String, nullable=False)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+from sqlalchemy import Float  # add Float to the existing import
+
+class ServiceStatus(Base):
+    __tablename__ = "service_status"
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    service_id = Column(UUID(as_uuid=True), ForeignKey("services.id", ondelete="CASCADE"), nullable=False, index=True)
+    status = Column(String, nullable=False)          # "UP" or "DOWN"
+    response_time = Column(Float, nullable=True)     # ms
+    checked_at = Column(DateTime(timezone=True), server_default=func.now())
