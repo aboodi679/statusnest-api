@@ -31,7 +31,8 @@ class Settings(BaseSettings):
                 f"@{self.db_host}:{self.db_port}/{self.db_name}"
             )
             return self
-      redis_url: str = "REDIS_URL=redis://statusnest-dev-redis.b8x2ra.0001.use1.cache.amazonaws.com:6379"  # ← add here
+        raise ValueError("Either DATABASE_URL or DB_HOST/DB_NAME/DB_USER/DB_PASSWORD must be set")
+
     class Config:
         env_file = ".env"
 
