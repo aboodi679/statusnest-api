@@ -1,5 +1,8 @@
 # StatusNest API
 
+<img width="955" height="470" alt="Screenshot 2026-07-03 144934" src="https://github.com/user-attachments/assets/46aea6a3-e806-4f61-804a-3dc4f9260b8f" />
+
+
 > Hosted Status Page SaaS on AWS — like statuspage.io
 
 A production-grade, multi-tenant status page platform built with FastAPI and deployed on AWS ECS Fargate. Companies sign up, add their services, and StatusNest monitors them every 60 seconds and serves a live public status page.
