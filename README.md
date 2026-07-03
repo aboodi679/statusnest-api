@@ -74,11 +74,11 @@ CloudFront
 
 | Resource | Value |
 |---|---|
-| ECS Cluster | `statusnest-dev-cluster` |
-| ALB | `statusnest-dev-alb-1293848550.us-east-1.elb.amazonaws.com` |
-| RDS | `statusnest-dev-db.c2hcyc4yyuxy.us-east-1.rds.amazonaws.com` |
-| Redis | `statusnest-dev-redis.b8x2ra.0001.use1.cache.amazonaws.com:6379` |
-| Region | `us-east-1` |
+| ECS Cluster | `---` |
+| ALB | `---` |
+| RDS | `---` |
+| Redis | `---` |
+| Region | `---` |
 
 ---
 
@@ -87,9 +87,9 @@ CloudFront
 Each service reads from AWS Secrets Manager / ECS task definition environment:
 
 ```
-DATABASE_URL      postgresql://user:pass@host:5432/statusnest
-REDIS_URL         redis://host:6379
-JWT_SECRET        <secret>
+DATABASE_URL      ---
+REDIS_URL         ---
+JWT_SECRET        ---
 ```
 
 ---
@@ -101,7 +101,7 @@ GitHub Actions with OIDC (no long-lived AWS keys):
 2. Push to ECR
 3. Update ECS service (force new deployment)
 
-Role: `arn:aws:iam::026243800492:role/statusnest-dev-github-actions-role`
+Role: `---`
 
 ---
 
