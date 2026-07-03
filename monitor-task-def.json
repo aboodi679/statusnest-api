@@ -1,0 +1,29 @@
+{
+  "family": "statusnest-dev-monitor",
+  "networkMode": "awsvpc",
+  "requiresCompatibilities": ["FARGATE"],
+  "cpu": "256",
+  "memory": "512",
+  "executionRoleArn": "arn:aws:iam::026243800492:role/statusnest-dev-ecs-execution-role",
+  "taskRoleArn": "arn:aws:iam::026243800492:role/statusnest-dev-ecs-task-role",
+  "containerDefinitions": [
+    {
+      "name": "monitor",
+      "image": "026243800492.dkr.ecr.us-east-1.amazonaws.com/statusnest-dev-monitor:latest",
+      "portMappings": [{"containerPort": 8001, "protocol": "tcp"}],
+      "essential": true,
+      "secrets": [
+        {"name": "DATABASE_URL", "valueFrom": "arn:aws:secretsmanager:us-east-1:026243800492:secret:statusnest-dev-database-url-75QRll"},
+        {"name": "JWT_SECRET", "valueFrom": "arn:aws:secretsmanager:us-east-1:026243800492:secret:statusnest-dev-jwt-secret-Ze5Tcs"}
+      ],
+      "logConfiguration": {
+        "logDriver": "awslogs",
+        "options": {
+          "awslogs-group": "/ecs/statusnest-dev-monitor",
+          "awslogs-region": "us-east-1",
+          "awslogs-stream-prefix": "ecs"
+        }
+      }
+    }
+  ]
+}
