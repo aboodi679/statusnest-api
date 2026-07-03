@@ -151,6 +151,9 @@ Every push to `main` automatically:
 
 Uses GitHub Actions OIDC — no AWS keys stored anywhere.
 
+<img width="746" height="470" alt="image" src="https://github.com/user-attachments/assets/dac1e36c-2803-48f3-b01f-9f75e4b2de69" />
+
+
 ---
 
 ## Related Repos
