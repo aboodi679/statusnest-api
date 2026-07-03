@@ -30,10 +30,10 @@ async def xray_middleware(request, call_next):
         xray_recorder.end_segment()
 
 app.include_router(auth.router)
-app.include_router(services.router)
-app.include_router(incidents.router)
-app.include_router(subscribers.router)
-app.include_router(status.router)
+app.include_router(services.router, prefix="/api/monitor")
+app.include_router(incidents.router, prefix="/api/monitor")
+app.include_router(subscribers.router, prefix="/api/monitor")
+app.include_router(status.router, prefix="/api")
 
 @app.get("/health")
 def health():
