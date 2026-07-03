@@ -14,6 +14,9 @@ FastAPI backend for the StatusNest multi-tenant service monitoring platform. Thr
 
 All three are routed through CloudFront → ALB using path-based routing.
 
+<img width="1567" height="280" alt="image" src="https://github.com/user-attachments/assets/a88382bd-f304-4d9d-af37-c3fea11d2311" />
+
+
 ---
 
 ## Tech Stack
