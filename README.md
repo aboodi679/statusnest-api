@@ -1,169 +1,111 @@
 # StatusNest API
 
-<img width="955" height="470" alt="Screenshot 2026-07-03 144934" src="https://github.com/user-attachments/assets/46aea6a3-e806-4f61-804a-3dc4f9260b8f" />
-
-
-> Hosted Status Page SaaS on AWS — like statuspage.io
-
-A production-grade, multi-tenant status page platform built with FastAPI and deployed on AWS ECS Fargate. Companies sign up, add their services, and StatusNest monitors them every 60 seconds and serves a live public status page.
-
-**Live Demo:** http://statusnest-dev-frontend.s3-website.us-east-1.amazonaws.com
+FastAPI backend for the StatusNest multi-tenant service monitoring platform. Three independently deployed microservices running on AWS ECS Fargate behind an Application Load Balancer.
 
 ---
 
-## Architecture
+## Services
 
-```
-ALB (Application Load Balancer)
-├── /auth/*         → Auth Service        (Port 8000, ECS Fargate)
-├── /api/monitor/*  → Monitor API Service (Port 8001, ECS Fargate)
-└── /status/*       → Status Page Service (Port 8002, ECS Fargate)
-          ↓
-PostgreSQL RDS + ElastiCache Redis
-          ↑
-EventBridge (60s) → Lambda Monitor Worker → SQS → Lambda Processor
-```
+| Service | Port | Responsibility |
+|---|---|---|
+| `auth` | 8000 | User registration, login, JWT issuance |
+| `monitor` | 8001 | Services CRUD, incidents, subscribers |
+| `status` | 8002 | Public status page (Redis-first, RDS fallback) |
 
----
-
-## Microservices
-
-### Auth Service — `/auth/*`
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| POST | `/auth/register` | Create tenant account |
-| POST | `/auth/login` | Login, returns JWT |
-| GET | `/auth/me` | Current user profile |
-
-### Monitor API — `/api/monitor/*`
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| POST | `/api/monitor/services` | Add a service to monitor |
-| GET | `/api/monitor/services` | List all services |
-| DELETE | `/api/monitor/services/{id}` | Remove a service |
-| POST | `/api/monitor/incidents` | Create an incident |
-| PATCH | `/api/monitor/incidents/{id}` | Update incident status |
-| POST | `/api/monitor/subscribers` | Subscribe email to alerts |
-| GET | `/api/monitor/subscribers` | List subscribers |
-
-### Status Page — `/status/*`
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | `/status/{username}` | Public status page (Redis-first) |
-| GET | `/status/{username}/history/{service_id}` | 24h history |
+All three are routed through CloudFront → ALB using path-based routing.
 
 ---
 
 ## Tech Stack
 
 | Layer | Technology |
-|-------|-----------|
-| Language | Python 3.11 |
-| Framework | FastAPI + Uvicorn |
+|---|---|
+| Framework | FastAPI |
+| ORM | SQLAlchemy |
 | Database | PostgreSQL (AWS RDS) |
-| Cache | ElastiCache Redis |
-| Auth | JWT via python-jose |
-| Tracing | AWS X-Ray |
-| Containers | Docker + ECR + ECS Fargate |
-| CI/CD | GitHub Actions + OIDC (zero stored keys) |
-| Secrets | AWS Secrets Manager |
+| Cache | Redis (AWS ElastiCache) |
+| Auth | JWT (python-jose) + bcrypt |
+| Tracing | AWS X-Ray SDK |
+| Container | Docker → AWS ECR → ECS Fargate |
 
 ---
 
-## Project Structure
+## API Endpoints
 
+### Auth — `/auth`
 ```
-statusnest-api/
-├── app/
-│   ├── routers/
-│   │   ├── auth.py          # Auth endpoints
-│   │   ├── services.py      # Service CRUD
-│   │   ├── incidents.py     # Incident management
-│   │   ├── subscribers.py   # Email subscribers
-│   │   └── status.py        # Public status page
-│   ├── models.py            # SQLAlchemy models
-│   ├── schemas.py           # Pydantic schemas
-│   ├── database.py          # DB connection
-│   ├── config.py            # Settings
-│   └── security.py          # JWT helpers
-├── main.py                  # Auth service entrypoint
-├── main_monitor.py          # Monitor service entrypoint
-├── main_status.py           # Status page entrypoint
-├── Dockerfile               # Auth service
-├── Dockerfile.monitor       # Monitor service
-├── Dockerfile.status        # Status service
-├── requirements.txt
-└── .github/
-    └── workflows/
-        ├── deploy.yml           # Auth CI/CD
-        ├── deploy-monitor.yml   # Monitor CI/CD
-        └── deploy-status.yml    # Status CI/CD
+POST /auth/register       # Create account
+POST /auth/login          # Returns JWT access token
+GET  /auth/me             # Current user info (requires Bearer token)
+```
+
+### Monitor — `/api/monitor`
+```
+GET    /api/monitor/services           # List active services
+POST   /api/monitor/services           # Add service
+DELETE /api/monitor/services/{id}      # Soft-delete service
+
+GET    /api/monitor/incidents          # List incidents
+POST   /api/monitor/incidents          # Create incident
+PATCH  /api/monitor/incidents/{id}     # Update incident status
+
+GET    /api/monitor/subscribers        # List subscribers
+POST   /api/monitor/subscribers        # Add subscriber
+```
+
+### Status — `/api/status`
+```
+GET /api/status/{username}                        # Public status page data
+GET /api/status/{username}/history/{service_id}   # 24h history for a service
 ```
 
 ---
 
-## Local Development
+## Infrastructure
 
-### Prerequisites
-- Python 3.11
-- PostgreSQL
-- Redis
-
-### Setup
-
-```bash
-git clone https://github.com/aboodi679/statusnest-api
-cd statusnest-api
-pip install -r requirements.txt
+```
+CloudFront
+  /auth/*  → ALB → auth ECS service  (port 8000)
+  /api/*   → ALB → monitor / status  (ports 8001, 8002)
 ```
 
-Create `.env` file:
-```
-DATABASE_URL=postgresql://user:password@localhost:5432/statusnest
-JWT_SECRET=your-secret-key
-REDIS_URL=redis://localhost:6379
-```
+| Resource | Value |
+|---|---|
+| ECS Cluster | `statusnest-dev-cluster` |
+| ALB | `statusnest-dev-alb-1293848550.us-east-1.elb.amazonaws.com` |
+| RDS | `statusnest-dev-db.c2hcyc4yyuxy.us-east-1.rds.amazonaws.com` |
+| Redis | `statusnest-dev-redis.b8x2ra.0001.use1.cache.amazonaws.com:6379` |
+| Region | `us-east-1` |
 
-Run auth service:
-```bash
-uvicorn main:app --reload --port 8000
-```
+---
 
-Run monitor service:
-```bash
-uvicorn main_monitor:app --reload --port 8001
-```
+## Environment Variables
 
-Run status page service:
-```bash
-uvicorn main_status:app --reload --port 8002
+Each service reads from AWS Secrets Manager / ECS task definition environment:
+
+```
+DATABASE_URL      postgresql://user:pass@host:5432/statusnest
+REDIS_URL         redis://host:6379
+JWT_SECRET        <secret>
 ```
 
 ---
 
 ## CI/CD
 
-Every push to `main` automatically:
-1. Builds Docker image
-2. Pushes to Amazon ECR
-3. Updates ECS task definition
-4. Deploys to ECS Fargate (zero downtime rolling update)
+GitHub Actions with OIDC (no long-lived AWS keys):
+1. Build Docker image
+2. Push to ECR
+3. Update ECS service (force new deployment)
 
-Uses GitHub Actions OIDC — no AWS keys stored anywhere.
-
-<img width="746" height="470" alt="image" src="https://github.com/user-attachments/assets/dac1e36c-2803-48f3-b01f-9f75e4b2de69" />
-
+Role: `arn:aws:iam::026243800492:role/statusnest-dev-github-actions-role`
 
 ---
 
 ## Related Repos
 
 | Repo | Description |
-|------|-------------|
-| [statusnest-infra](https://github.com/aboodi679/statusnest-infra) | Terraform IaC — all AWS resources |
-| [statusnest-worker](https://github.com/aboodi679/statusnest-worker) | Lambda monitor + processor |
-| [statusnest-frontend](https://github.com/aboodi679/statusnest-frontend) | React dashboard |
-
----
-
-*Built by [Muhammad Abdullah](https://github.com/aboodi679) · Powered by AWS*
+|---|---|
+| [statusnest-frontend](https://github.com/aboodi679/statusnest-frontend) | React SPA |
+| [statusnest-worker](https://github.com/aboodi679/statusnest-worker) | Lambda monitor + SQS processor |
+| [statusnest-infra](https://github.com/aboodi679/statusnest-infra) | Terraform IaC for all AWS infrastructure |
